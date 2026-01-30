@@ -1,0 +1,54 @@
+const express = require("express");
+const bodyParser = require("body-parser");
+const { handleInput } = require("./coreEngine");
+
+const app = express();
+app.use(bodyParser.json());
+
+const BETA_KEY = "mirror-closed";
+const MAX_SESSIONS = 20;
+
+const sessions = {};
+const rateLimit = {};
+
+function allowed(sessionId) {
+  const now = Date.now();
+  rateLimit[sessionId] = rateLimit[sessionId] || [];
+  rateLimit[sessionId] = rateLimit[sessionId].filter(t => now - t < 60000);
+  if (rateLimit[sessionId].length >= 10) return false;
+  rateLimit[sessionId].push(now);
+  return true;
+}
+
+app.post("/input", (req, res) => {
+  if (req.headers["x-beta-key"] !== BETA_KEY) {
+    return res.json({ type: "silence" });
+  }
+
+  const { session_id, text } = req.body;
+  if (!session_id) return res.json({ type: "silence" });
+
+  if (!sessions[session_id]) {
+    if (Object.keys(sessions).length >= MAX_SESSIONS) {
+      return res.json({ type: "silence" });
+    }
+    sessions[session_id] = { hasAskedSingleQuestion: false, history: [] };
+  }
+
+  if (!allowed(session_id)) {
+    return res.json({ type: "silence" });
+  }
+
+  const state = sessions[session_id];
+  const output = handleInput(
+    { text, session_id, history: state.history },
+    state
+  );
+
+  state.history.push({ text });
+  res.json(output);
+});
+
+app.listen(3000, () => {
+  console.log("Mirror engine running on port 3000");
+});
