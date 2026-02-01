@@ -48,6 +48,32 @@ app.post("/input", (req, res) => {
   state.history.push({ text });
   res.json(output);
 });
+// ROOT – backend çalışıyor mu?
+app.get("/", (req, res) => {
+  res.json({
+    status: "running",
+    service: "mirror-backend",
+    message: "Mirror backend is alive"
+  });
+});
+
+// HEALTH – sistem durumu
+app.get("/health", (req, res) => {
+  res.json({
+    status: "ok",
+    uptime: process.uptime(),
+    timestamp: new Date().toISOString()
+  });
+});
+
+// META – sürüm bilgisi
+app.get("/meta", (req, res) => {
+  res.json({
+    service: "mirror-backend",
+    version: "0.1.0",
+    environment: process.env.NODE_ENV || "development"
+  });
+});
 
 app.listen(3000, () => {
   console.log("Mirror engine running on port 3000");
