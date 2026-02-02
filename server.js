@@ -74,6 +74,26 @@ app.get("/meta", (req, res) => {
     environment: process.env.NODE_ENV || "development"
   });
 });
+app.post("/api/analyze", (req, res) => {
+  const { session_id, text } = req.body;
+
+  if (!session_id || !text) {
+    return res.status(400).json({
+      status: "error",
+      message: "session_id and text are required"
+    });
+  }
+
+  res.json({
+    status: "ok",
+    input: text,
+    analysis: {
+      assumptions: [],
+      risks: [],
+      alternatives: []
+    }
+  });
+});
 
 app.listen(3000, () => {
   console.log("Mirror engine running on port 3000");
