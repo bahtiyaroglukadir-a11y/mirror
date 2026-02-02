@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <title>Mirror – Test</title>
+</head>
+<body>
+
+  <h2>Mirror Test Panel</h2>
+
+  <textarea id="input" rows="4" cols="50"
+    placeholder="Bir düşünce ya da karar yaz..."></textarea>
+  <br><br>
+
+  <button onclick="send()">Gönder</button>
+
+  <pre id="output"></pre>
+
+  <script>
+    async function send() {
+      const text = document.getElementById("input").value;
+
+      const res = await fetch(
+        "https://mirror-8bya.onrender.com/api/analyze",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            session_id: "test-session",
+            text: text
+          })
+        }
+      );
+
+      const data = await res.json();
+      document.getElementById("output").textContent =
+        JSON.stringify(data, null, 2);
+    }
+  </script>
+
+</body>
+</html>
