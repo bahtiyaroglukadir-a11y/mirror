@@ -94,6 +94,23 @@ app.post("/api/analyze", (req, res) => {
     }
   });
 });
+// 404 – Tanımsız endpoint
+app.use((req, res) => {
+  res.status(404).json({
+    status: "error",
+    message: "Endpoint not found"
+  });
+});
+
+// Global error handler
+app.use((err, req, res, next) => {
+  console.error(err);
+
+  res.status(500).json({
+    status: "error",
+    message: "Internal server error"
+  });
+});
 
 app.listen(3000, () => {
   console.log("Mirror engine running on port 3000");
