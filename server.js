@@ -1,9 +1,11 @@
 const express = require("express");
 const bodyParser = require("body-parser");
+const cors = require("cors");
 const { handleInput } = require("./coreEngine");
 
 const app = express();
 app.use(bodyParser.json());
+app.use(cors());
 
 const BETA_KEY = "mirror-closed";
 const MAX_SESSIONS = 20;
