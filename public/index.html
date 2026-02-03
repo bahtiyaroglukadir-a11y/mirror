@@ -20,8 +20,7 @@
     async function send() {
       const text = document.getElementById("input").value;
 
-      const res = await fetch(
-        "https://mirror-8bya.onrender.com/input"
+      const res = await fetch("/input", {
 
         {
           method: "POST",
@@ -40,6 +39,43 @@
         JSON.stringify(data, null, 2);
     }
   </script>
+<script>
+  async function send() {
+    const inputEl = document.getElementById("input");
+    const outputEl = document.getElementById("output");
+
+    if (!inputEl || !outputEl) {
+      console.error("Input veya output elementi bulunamadı");
+      return;
+    }
+
+    const text = inputEl.value.trim();
+    if (!text) {
+      outputEl.textContent = "Lütfen bir metin gir.";
+      return;
+    }
+
+    try {
+      const res = await fetch("/input", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          session_id: "web-session",
+          text: text
+        })
+      });
+
+      const data = await res.json();
+      outputEl.textContent = JSON.stringify(data, null, 2);
+
+    } catch (err) {
+      console.error(err);
+      outputEl.textContent = "Sunucuya bağlanılamadı.";
+    }
+  }
+</script>
 
 </body>
 </html>
