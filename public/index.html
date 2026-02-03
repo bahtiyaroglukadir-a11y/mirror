@@ -2,15 +2,41 @@
 <html lang="tr">
 <head>
   <meta charset="UTF-8">
-  <title>Mirror – Test</title>
+  <title>Mirror</title>
+  <style>
+    body {
+      background: #111;
+      color: #eee;
+      font-family: Arial, sans-serif;
+      padding: 40px;
+    }
+    textarea {
+      width: 100%;
+      height: 100px;
+      margin-bottom: 10px;
+      font-size: 16px;
+    }
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    pre {
+      margin-top: 20px;
+      background: #222;
+      padding: 15px;
+      white-space: pre-wrap;
+    }
+  </style>
 </head>
+
 <body>
 
-  <h2>Mirror Test Panel</h2>
+  <h1>Mirror</h1>
 
-  <textarea id="input" rows="4" cols="50"
-    placeholder="Bir düşünce ya da karar yaz..."></textarea>
-  <br><br>
+  <textarea id="input" placeholder="Bir düşünce ya da karar yaz..."></textarea>
+
+  <br>
 
   <button onclick="send()">Gönder</button>
 
@@ -18,64 +44,36 @@
 
   <script>
     async function send() {
-      const text = document.getElementById("input").value;
+      const inputEl = document.getElementById("input");
+      const outputEl = document.getElementById("output");
 
-      const res = await fetch("/input", {
+      const text = inputEl.value.trim();
+      if (!text) {
+        outputEl.textContent = "Lütfen bir metin gir.";
+        return;
+      }
 
-        {
+      try {
+        const res = await fetch("/input", {
           method: "POST",
           headers: {
             "Content-Type": "application/json"
           },
           body: JSON.stringify({
-            session_id: "test-session",
+            session_id: "web-session",
             text: text
           })
-        }
-      );
+        });
 
-      const data = await res.json();
-      document.getElementById("output").textContent =
-        JSON.stringify(data, null, 2);
+        const data = await res.json();
+        outputEl.textContent = JSON.stringify(data, null, 2);
+
+      } catch (err) {
+        console.error(err);
+        outputEl.textContent = "Sunucuya bağlanılamadı.";
+      }
     }
   </script>
-<script>
-  async function send() {
-    const inputEl = document.getElementById("input");
-    const outputEl = document.getElementById("output");
-
-    if (!inputEl || !outputEl) {
-      console.error("Input veya output elementi bulunamadı");
-      return;
-    }
-
-    const text = inputEl.value.trim();
-    if (!text) {
-      outputEl.textContent = "Lütfen bir metin gir.";
-      return;
-    }
-
-    try {
-      const res = await fetch("/input", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          session_id: "web-session",
-          text: text
-        })
-      });
-
-      const data = await res.json();
-      outputEl.textContent = JSON.stringify(data, null, 2);
-
-    } catch (err) {
-      console.error(err);
-      outputEl.textContent = "Sunucuya bağlanılamadı.";
-    }
-  }
-</script>
 
 </body>
 </html>
