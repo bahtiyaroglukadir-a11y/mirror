@@ -57,7 +57,11 @@
         const res = await fetch("/input", {
           method: "POST",
           headers: {
-            "Content-Type": "application/json"
+            headers: {
+  "Content-Type": "application/json",
+  "x-beta-key": "mirror-closed"
+}
+
           },
           body: JSON.stringify({
             session_id: "web-session",
