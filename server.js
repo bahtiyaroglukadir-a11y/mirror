@@ -52,13 +52,6 @@ app.post("/input", (req, res) => {
   res.json(output);
 });
 // ROOT – backend çalışıyor mu?
-app.get("/", (req, res) => {
-  res.json({
-    status: "running",
-    service: "mirror-backend",
-    message: "Mirror backend is alive"
-  });
-});
 
 // HEALTH – sistem durumu
 app.get("/health", (req, res) => {
