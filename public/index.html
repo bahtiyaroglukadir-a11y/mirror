@@ -3,44 +3,140 @@
 <head>
   <meta charset="UTF-8">
   <title>Mirror</title>
+
   <style>
-    body {
-      background: #111;
-      color: #eee;
-      font-family: Arial, sans-serif;
-      padding: 40px;
+    :root {
+      --bg-main: #140b0d;
+      --bg-panel: #1c0f13;
+      --accent: #7a2e35;
+      --text-main: #e6e1e1;
+      --text-muted: #b9aeb0;
     }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: linear-gradient(
+        180deg,
+        #1a0c10 0%,
+        #140b0d 100%
+      );
+      color: var(--text-main);
+      font-family: Inter, system-ui, -apple-system, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      padding: 60px 20px;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 720px;
+    }
+
+    header {
+      margin-bottom: 40px;
+    }
+
+    header h1 {
+      font-size: 20px;
+      font-weight: 500;
+      letter-spacing: 0.4em;
+      color: var(--text-muted);
+    }
+
+    .input-area {
+      background: var(--bg-panel);
+      border: 1px solid rgba(255,255,255,0.04);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 16px;
+    }
+
     textarea {
       width: 100%;
-      height: 100px;
-      margin-bottom: 10px;
+      height: 120px;
+      background: transparent;
+      border: none;
+      outline: none;
+      resize: none;
+      color: var(--text-main);
       font-size: 16px;
+      line-height: 1.6;
     }
+
+    textarea::placeholder {
+      color: var(--text-muted);
+    }
+
+    .actions {
+      display: flex;
+      justify-content: flex-end;
+      margin-bottom: 32px;
+    }
+
     button {
-      padding: 10px 20px;
-      font-size: 16px;
+      background: transparent;
+      border: 1px solid var(--accent);
+      color: var(--accent);
+      padding: 10px 22px;
+      border-radius: 20px;
+      font-size: 14px;
       cursor: pointer;
+      transition: all 0.25s ease;
     }
-    pre {
-      margin-top: 20px;
-      background: #222;
-      padding: 15px;
+
+    button:hover {
+      background: var(--accent);
+      color: #fff;
+      transform: scale(1.03);
+    }
+
+    .response {
+      opacity: 0;
+      transform: translateY(6px);
+      transition: opacity 0.4s ease, transform 0.4s ease;
+      background: rgba(255,255,255,0.02);
+      border-left: 2px solid var(--accent);
+      padding: 18px 20px;
+      border-radius: 8px;
       white-space: pre-wrap;
+      line-height: 1.6;
+    }
+
+    .response.visible {
+      opacity: 1;
+      transform: translateY(0);
     }
   </style>
 </head>
 
 <body>
 
-  <h1>Mirror</h1>
+  <div class="container">
 
-  <textarea id="input" placeholder="Bir düşünce ya da karar yaz..."></textarea>
+    <header>
+      <h1>MIRROR</h1>
+    </header>
 
-  <br>
+    <div class="input-area">
+      <textarea
+        id="input"
+        placeholder="Bir düşünce ya da karar yaz…">
+      </textarea>
+    </div>
 
-  <button onclick="send()">Gönder</button>
+    <div class="actions">
+      <button onclick="send()">Düşün</button>
+    </div>
 
-  <pre id="output"></pre>
+    <div id="output" class="response"></div>
+
+  </div>
 
   <script>
     async function send() {
@@ -48,20 +144,17 @@
       const outputEl = document.getElementById("output");
 
       const text = inputEl.value.trim();
-      if (!text) {
-        outputEl.textContent = "Lütfen bir metin gir.";
-        return;
-      }
+      if (!text) return;
+
+      outputEl.classList.remove("visible");
+      outputEl.textContent = "…";
 
       try {
         const res = await fetch("/input", {
           method: "POST",
           headers: {
-            headers: {
-  "Content-Type": "application/json",
-  "x-beta-key": "mirror-closed"
-}
-
+            "Content-Type": "application/json",
+            "x-beta-key": "mirror-closed"
           },
           body: JSON.stringify({
             session_id: "web-session",
@@ -70,11 +163,16 @@
         });
 
         const data = await res.json();
-        outputEl.textContent = JSON.stringify(data, null, 2);
+
+        setTimeout(() => {
+          outputEl.textContent =
+            JSON.stringify(data, null, 2);
+          outputEl.classList.add("visible");
+        }, 400);
 
       } catch (err) {
-        console.error(err);
-        outputEl.textContent = "Sunucuya bağlanılamadı.";
+        outputEl.textContent = "Bir sorun oluştu.";
+        outputEl.classList.add("visible");
       }
     }
   </script>
