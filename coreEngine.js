@@ -1,56 +1,110 @@
-const SINGLE_QUESTION =
-  "Bu kararı şimdi almamak sana ne kazandırıyor?";
+// A MODÜLÜ – KARAR ÇERÇEVESİ MOTORU
+// Dil: ne soğuk ne duygusal
+// Amaç: karar alanını görünür kılmak
 
-const DIRECT_STATEMENT =
-  "Bu sistem senin yerine karar vermez.\nKararının nasıl oluştuğunu görünür kılar.";
+function extractAssumptions(text) {
+  const assumptions = [];
 
-function silence() {
-  return { type: "silence" };
-}
-
-function statement(text) {
-  return { type: "statement", text };
-}
-
-function singleQuestion(state) {
-  state.hasAskedSingleQuestion = true;
-  return { type: "single_question", text: SINGLE_QUESTION };
-}
-
-function handleInput(input, state) {
-  try {
-    const { text = "", history = [] } = input;
-    const t = text.toLowerCase();
-
-    if (!t.trim()) return silence();
-
-    if (
-      t.includes("ne yapmalıyım") ||
-      t.includes("sence") ||
-      t.includes("karar ver")
-    ) {
-      return statement(DIRECT_STATEMENT);
-    }
-
-    if (t.includes(" mi ") || t.includes(" mı ") || t.includes("/")) {
-      return silence();
-    }
-
-    const escapeWords = ["emin değilim", "bilmiyorum", "sonra"];
-    const escapeCount = history.filter(h =>
-      escapeWords.some(w => h.text.toLowerCase().includes(w))
-    ).length;
-
-    if (!state.hasAskedSingleQuestion && escapeCount >= 2) {
-      return singleQuestion(state);
-    }
-
-    if (t.length < 4) return silence();
-
-    return silence();
-  } catch {
-    return silence();
+  if (text.includes("ya da") || text.includes("başka yol")) {
+    assumptions.push(
+      "Bu kararın yalnızca iki seçenekten ibaret olduğu varsayılıyor."
+    );
   }
+
+  if (text.match(/asla|hiç|kesinlikle/)) {
+    assumptions.push(
+      "Durumun değişmeyeceği veya esnek olmadığı kabul ediliyor."
+    );
+  }
+
+  if (text.match(/geç kaldım|çok geç/)) {
+    assumptions.push(
+      "Zamanın geri döndürülemez olduğu varsayımı yapılıyor."
+    );
+  }
+
+  return assumptions;
+}
+
+function identifyRisks(text) {
+  const risks = [];
+
+  if (text.match(/rahat|kolay/)) {
+    risks.push(
+      "Kısa vadeli rahatlık, uzun vadeli bir maliyeti gizliyor olabilir."
+    );
+  }
+
+  if (text.match(/her şey|mahvolur|biter/)) {
+    risks.push(
+      "Sonucun olduğundan daha uç bir noktada düşünülmesi olası."
+    );
+  }
+
+  if (text.match(/mecbur|başka çarem yok/)) {
+    risks.push(
+      "Zorunluluk hissi, başka ihtimallerin gözden kaçmasına yol açabilir."
+    );
+  }
+
+  return risks;
+}
+
+function generateAlternatives(text) {
+  const alternatives = [];
+
+  alternatives.push(
+    "Kararı hemen vermek yerine daha küçük bir adım atmak."
+  );
+
+  alternatives.push(
+    "Mevcut seçenekleri yeniden tanımlamak."
+  );
+
+  if (!text.includes("bekle")) {
+    alternatives.push(
+      "Kararı erteleyerek yeni bilgi edinmek."
+    );
+  }
+
+  return alternatives;
+}
+
+function buildSummary({ assumptions, risks, alternatives }) {
+  if (assumptions.length === 0 && risks.length === 0) {
+    return "Bu düşünce açık bir acele içermiyor, ancak yine de varsayımlar tamamen görünür olmayabilir.";
+  }
+
+  return "Bu düşünce, fark edilmeden kabul edilen varsayımlar ve bazı riskler içeriyor. Alternatifler tamamen kapanmış değil.";
+}
+
+function handleInput({ text }) {
+  if (!text || text.length < 3) {
+    return { type: "silence" };
+  }
+
+  const assumptions = extractAssumptions(text);
+  const risks = identifyRisks(text);
+  const alternatives = generateAlternatives(text);
+
+  const summary = buildSummary({
+    assumptions,
+    risks,
+    alternatives
+  });
+
+  return {
+    type: "decision_frame",
+    summary,
+    structured: {
+      assumptions,
+      risks,
+      alternatives
+    },
+    readable:
+      summary +
+      " Varsayımlar, riskler ve alternatifler birlikte değerlendirildiğinde karar alanı biraz daha netleşebilir."
+  };
 }
 
 module.exports = { handleInput };
