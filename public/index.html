@@ -20,11 +20,7 @@
     body {
       margin: 0;
       min-height: 100vh;
-      background: linear-gradient(
-        180deg,
-        #1a0c10 0%,
-        #140b0d 100%
-      );
+      background: linear-gradient(180deg, #1a0c10 0%, #140b0d 100%);
       color: var(--text-main);
       font-family: Inter, system-ui, -apple-system, sans-serif;
       display: flex;
@@ -36,6 +32,7 @@
     .container {
       width: 100%;
       max-width: 720px;
+      padding-bottom: 40px;
     }
 
     header {
@@ -43,9 +40,10 @@
     }
 
     header h1 {
-      font-size: 20px;
-      font-weight: 500;
-      letter-spacing: 0.4em;
+      font-size: 14px;
+      font-weight: 400;
+      letter-spacing: 0.5em;
+      opacity: 0.7;
       color: var(--text-muted);
     }
 
@@ -67,6 +65,7 @@
       color: var(--text-main);
       font-size: 16px;
       line-height: 1.6;
+      padding: 4px 0;
     }
 
     textarea::placeholder {
@@ -94,6 +93,7 @@
       background: var(--accent);
       color: #fff;
       transform: scale(1.03);
+      box-shadow: 0 6px 20px rgba(122,46,53,0.35);
     }
 
     .response {
@@ -106,6 +106,7 @@
       border-radius: 8px;
       white-space: pre-wrap;
       line-height: 1.6;
+      font-size: 15px;
     }
 
     .response.visible {
@@ -126,7 +127,7 @@
     <div class="input-area">
       <textarea
         id="input"
-        placeholder="Bir düşünce ya da karar yaz…">
+        placeholder="Aklından geçen şeyi netleştir.">
       </textarea>
     </div>
 
@@ -147,7 +148,7 @@
       if (!text) return;
 
       outputEl.classList.remove("visible");
-      outputEl.textContent = "…";
+      outputEl.textContent = "Düşünüyorum…";
 
       try {
         const res = await fetch("/input", {
@@ -165,8 +166,7 @@
         const data = await res.json();
 
         setTimeout(() => {
-          outputEl.textContent =
-            JSON.stringify(data, null, 2);
+          outputEl.textContent = JSON.stringify(data, null, 2);
           outputEl.classList.add("visible");
         }, 400);
 
