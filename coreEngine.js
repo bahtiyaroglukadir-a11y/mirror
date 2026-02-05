@@ -103,15 +103,14 @@ function handleInput({ text, session_id, history }) {
   const alternatives = generateAlternatives(text);
 
   return {
-    type: "decision-frame",
-    summary: buildSummary(assumptions, risks, alternatives),
-    structured: {
-      assumptions,
-      risks,
-      alternatives
-    },
-    readable: buildSummary(assumptions, risks, alternatives)
-  };
+  "tür": "karar-çerçevesi",
+  "özet": "...",
+  "yapı": {
+    "varsayımlar": [],
+    "riskler": [],
+    "alternatifler": []
+  },
+  "okunabilir": "..."
 }
 
 module.exports = { handleInput };
