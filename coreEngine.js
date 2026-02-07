@@ -138,48 +138,5 @@ function buildReadable(tone) {
   return "Bu karar alanı şu an sakin ve geniş görünüyor.";
 }
 
-function handleInput({ text }) {
-  if (!text || text.trim().length < 3) {
-    return {
-      type: "silence",
-      readable: "Yeterli içerik bulunmadığı için değerlendirme yapılmadı."
-    };
-  }
-
-  const assumptions = extractAssumptions(text);
-  const risks = identifyRisks(text);
-  const alternatives = generateAlternatives();
-
-  const pressure = calculatePressure(assumptions, risks);
-
-  const contradiction = detectContradiction(assumptions);
-  const avoidance = detectAvoidance(text, pressure);
-  const wrongQuestion = detectWrongQuestion(assumptions, risks);
-
-  const tone = determineTone(
-    pressure,
-    contradiction,
-    avoidance,
-    wrongQuestion
-  );
-
-  return {
-    type: "decision-frame",
-    pressure,
-    tone,
-    flags: {
-      contradiction,
-      avoidance,
-      wrongQuestion
-    },
-    summary: buildSummary(tone),
-    structured: {
-      assumptions,
-      risks,
-      alternatives
-    },
-    readable: buildReadable(tone)
-  };
-}
 
 module.exports = { handleInput };
