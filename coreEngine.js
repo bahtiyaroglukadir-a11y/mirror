@@ -1,23 +1,33 @@
 // coreEngine.js
-// Mirror – Deterministik Karar Motoru (AI bağımsız)
+// Mirror – Stabil Deterministik Karar Motoru
+// Backend uyumlu, AI bağımsız
+
+// ----------------------------
+// ANALİZ FONKSİYONLARI
+// ----------------------------
 
 function extractAssumptions(text) {
   const assumptions = [];
   const reasoning = [];
 
-  if (text.includes("zorundayım") || text.includes("başka yol yok")) {
+  if (/zorundayım|mecbur|başka yol yok/i.test(text)) {
     assumptions.push("Başka seçenek olmadığı varsayılıyor.");
-    reasoning.push("Metinde zorunluluk ifadesi tespit edildi.");
+    reasoning.push("Zorunluluk dili tespit edildi.");
   }
 
-  if (text.includes("herkes") || text.includes("her zaman")) {
+  if (/herkes|her zaman|asla/i.test(text)) {
     assumptions.push("Durumun genelleştirildiği varsayılıyor.");
-    reasoning.push("Genelleme dili kullanıldığı tespit edildi.");
+    reasoning.push("Genelleme dili tespit edildi.");
+  }
+
+  if (/belki|emin değilim|kararsızım/i.test(text)) {
+    assumptions.push("Belirsizlik varsayımı mevcut.");
+    reasoning.push("Belirsizlik dili tespit edildi.");
   }
 
   if (assumptions.length === 0) {
     assumptions.push("Belirgin bir varsayım açıkça ifade edilmemiş.");
-    reasoning.push("Metinde açık varsayım bulunamadı.");
+    reasoning.push("Açık varsayım bulunamadı.");
   }
 
   return { assumptions, reasoning };
@@ -27,19 +37,19 @@ function identifyRisks(text) {
   const risks = [];
   const reasoning = [];
 
-  if (text.includes("acele") || text.includes("hemen")) {
+  if (/acele|hemen|şimdi/i.test(text)) {
     risks.push("Aceleyle verilen karar uzun vadeli sonuçlar doğurabilir.");
-    reasoning.push("Zaman baskısı ifadesi tespit edildi.");
+    reasoning.push("Zaman baskısı tespit edildi.");
   }
 
-  if (text.includes("korkarım") || text.includes("endişe")) {
-    risks.push("Duygusal kaygı karar kalitesini etkileyebilir.");
-    reasoning.push("Duygusal risk ifadesi tespit edildi.");
+  if (/pişman|yanlış|zarar/i.test(text)) {
+    risks.push("Yanlış karar sonrası pişmanlık riski mevcut.");
+    reasoning.push("Pişmanlık riski tespit edildi.");
   }
 
   if (risks.length === 0) {
     risks.push("Belirgin bir risk açıkça ifade edilmemiş.");
-    reasoning.push("Metinde açık risk bulunamadı.");
+    reasoning.push("Açık risk bulunamadı.");
   }
 
   return { risks, reasoning };
@@ -53,14 +63,15 @@ function generateAlternatives() {
   ];
 }
 
+// ----------------------------
+// KARAR HESAPLAMA
+// ----------------------------
+
 function calculatePressure(assumptions, risks) {
   let pressure = 1;
-
   if (assumptions.length > 1) pressure++;
   if (risks.length > 1) pressure++;
-
-  if (pressure > 3) pressure = 3;
-  return pressure;
+  return Math.min(3, pressure);
 }
 
 function determineTone(pressure) {
@@ -69,25 +80,39 @@ function determineTone(pressure) {
   return "yüksek";
 }
 
+function determineDepth(assumptions, risks, pressure) {
+  const score = assumptions.length + risks.length + pressure;
+  if (score <= 3) return "düşük";
+  if (score <= 6) return "orta";
+  return "yüksek";
+}
+
 function buildSummary(tone) {
-  if (tone === "düşük") {
-    return "Bu karar şu an düşük baskı altında değerlendiriliyor.";
+  if (tone === "yüksek") {
+    return "Bu karar yüksek baskı altında ve dikkatle ele alınmalı.";
   }
   if (tone === "orta") {
     return "Bu karar bazı varsayımlar ve riskler içeriyor. Netlik artırılabilir.";
   }
-  return "Bu karar yüksek baskı altında ve dikkatle ele alınmalı.";
+  return "Bu karar şu an düşük baskı altında değerlendiriliyor.";
 }
 
-function buildReadable(assumptions, risks, alternatives) {
-  return (
-    "Bu karar, bazı varsayımlar ve riskler içeriyor. " +
-    "Alternatifler birlikte değerlendirildiğinde daha sağlıklı bir karar alanı oluşabilir."
-  );
+function buildReadable(depth) {
+  if (depth === "yüksek") {
+    return "Karar alanı daralmış görünüyor. Varsayımları yeniden ele almak faydalı olabilir.";
+  }
+  if (depth === "orta") {
+    return "Karar, içerdiği varsayımlar ve riskler nedeniyle dikkatli ele alınmalı.";
+  }
+  return "Bu karar alanı şu an sakin ve geniş görünüyor.";
 }
 
-function handleInput(text) {
-  if (!text || text.trim().length < 3) {
+// ----------------------------
+// ANA MOTOR (BACKEND UYUMLU)
+// ----------------------------
+
+function handleInput({ text }) {
+  if (!text || typeof text !== "string" || text.trim().length < 3) {
     return {
       type: "silence",
       readable: "Yeterli içerik bulunmadığı için değerlendirme yapılmadı."
@@ -104,17 +129,23 @@ function handleInput(text) {
   );
 
   const tone = determineTone(pressure);
+  const depth = determineDepth(
+    assumptionResult.assumptions,
+    riskResult.risks,
+    pressure
+  );
 
   const reasoning = [
     ...assumptionResult.reasoning,
     ...riskResult.reasoning,
-    `Varsayım ve risk sayısına göre baskı seviyesi ${pressure} olarak belirlendi.`,
-    `Bu nedenle ton '${tone}' olarak ayarlandı.`
+    `Varsayım ve risk yoğunluğuna göre baskı seviyesi ${pressure} olarak belirlendi.`,
+    `Bu nedenle ton '${tone}', derinlik '${depth}' olarak ayarlandı.`
   ];
 
   return {
     type: "decision-frame",
     pressure,
+    depth,
     tone,
     summary: buildSummary(tone),
     structured: {
@@ -123,11 +154,7 @@ function handleInput(text) {
       alternatives,
       reasoning
     },
-    readable: buildReadable(
-      assumptionResult.assumptions,
-      riskResult.risks,
-      alternatives
-    )
+    readable: buildReadable(depth)
   };
 }
 
