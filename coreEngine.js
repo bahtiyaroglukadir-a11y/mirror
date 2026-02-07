@@ -102,15 +102,16 @@ function handleInput({ text, session_id, history }) {
   const risks = identifyRisks(text);
   const alternatives = generateAlternatives(text);
 
-  return {
-  "tür": "karar-çerçevesi",
-  "özet": "...",
-  "yapı": {
-    "varsayımlar": [],
-    "riskler": [],
-    "alternatifler": []
+ return {
+  type: "decision-frame",
+  summary: buildSummary(assumptions, risks, alternatives),
+  structured: {
+    assumptions,
+    risks,
+    alternatives
   },
-  "okunabilir": "..."
-}
+  readable: buildSummary(assumptions, risks, alternatives)
+};
+
 
 module.exports = { handleInput };
