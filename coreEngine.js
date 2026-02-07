@@ -1,29 +1,22 @@
 // coreEngine.js
-// Mirror – Decision Frame Engine v4
-// Odak: Baskı + Çelişki + Kaçış + Yanlış Soru Tespiti
-// Karar vermez. Karar alanını zorlar.
+
+// ----------------------------
+// Yardımcı analiz fonksiyonları
+// ----------------------------
 
 function extractAssumptions(text) {
   const assumptions = [];
 
-  if (/zorundayım|mecbur|başka yol yok/i.test(text)) {
-    assumptions.push({ type: "baskı", weight: 5, note: "Zorunluluk varsayımı" });
+  if (/zorunda|mecbur|başka çare yok/i.test(text)) {
+    assumptions.push("Kararın zorunlu olduğu varsayılıyor.");
   }
 
-  if (/asla|daima|kesin/i.test(text)) {
-    assumptions.push({ type: "mutlak", weight: 3, note: "Mutlaklık varsayımı" });
-  }
-
-  if (/geç kaldım|son şans/i.test(text)) {
-    assumptions.push({ type: "zaman", weight: 4, note: "Zaman baskısı varsayımı" });
-  }
-
-  if (/belki|emin değilim|kararsızım/i.test(text)) {
-    assumptions.push({ type: "belirsizlik", weight: 2, note: "Belirsizlik varsayımı" });
+  if (/hemen|acil|şimdi/i.test(text)) {
+    assumptions.push("Zaman baskısı olduğu varsayılıyor.");
   }
 
   if (assumptions.length === 0) {
-    assumptions.push({ type: "zayıf", weight: 1, note: "Belirgin varsayım yok" });
+    assumptions.push("Metinde açık bir varsayım net biçimde görünmüyor.");
   }
 
   return assumptions;
@@ -32,111 +25,98 @@ function extractAssumptions(text) {
 function identifyRisks(text) {
   const risks = [];
 
-  if (/pişman|yanlış/i.test(text)) {
-    risks.push({ type: "duygusal", weight: 4, note: "Pişmanlık riski" });
+  if (/pişman|zarar|kayıp/i.test(text)) {
+    risks.push("Kararın olumsuz sonuçlar doğurma riski var.");
   }
 
-  if (/acele|hemen/i.test(text)) {
-    risks.push({ type: "zaman", weight: 3, note: "Acele karar riski" });
-  }
-
-  if (/kaybet|fırsat/i.test(text)) {
-    risks.push({ type: "kayıp", weight: 2, note: "Fırsat kaybı riski" });
+  if (/acele/i.test(text)) {
+    risks.push("Aceleyle verilen karar uzun vadede sorun yaratabilir.");
   }
 
   if (risks.length === 0) {
-    risks.push({ type: "düşük", weight: 1, note: "Belirgin risk yok" });
+    risks.push("Belirgin bir risk ifadesi tespit edilmedi.");
   }
 
   return risks;
 }
 
-function generateAlternatives() {
-  return [
-    "Kararı tamamen vermek yerine küçük ve geri alınabilir bir adım atmak",
-    "Kararı zamana yayarak yeni bilgi toplamak"
+function generateAlternatives(text) {
+  const alternatives = [
+    "Kararı tamamen vermek yerine küçük ve geri alınabilir bir adım atmak.",
+    "Mevcut seçenekleri yeniden tanımlayıp eksik ihtimalleri aramak."
   ];
+
+  if (/bekle|erte/i.test(text)) {
+    alternatives.push("Kararı erteleyerek yeni bilgi ve geri bildirim toplamak.");
+  }
+
+  return alternatives;
 }
 
 function calculatePressure(assumptions, risks) {
-  const a = assumptions.reduce((s, x) => s + x.weight, 0);
-  const r = risks.reduce((s, x) => s + x.weight, 0);
-  return a + r;
+  let pressure = 1;
+  if (assumptions.length > 1) pressure++;
+  if (risks.length > 1) pressure++;
+  return Math.min(3, pressure);
 }
 
-// 🔴 ÇELİŞKİ TESPİTİ
-function detectContradiction(assumptions) {
-  const hasPressure = assumptions.some(a => a.type === "baskı");
-  const hasUncertainty = assumptions.some(a => a.type === "belirsizlik");
-
-  if (hasPressure && hasUncertainty) {
-    return "Aynı anda hem zorunluluk hem belirsizlik varsayımı mevcut.";
-  }
-  return null;
-}
-
-// 🔴 KAÇIŞ TESPİTİ
-function detectAvoidance(text, pressure) {
-  if (pressure < 4 && /bilmiyorum|fark etmez|herhalde/i.test(text)) {
-    return "Soru karar almaktan çok kaçınma veya erteleme eğilimi gösteriyor.";
-  }
-  return null;
-}
-
-// 🔴 YANLIŞ SORU TESPİTİ
-function detectWrongQuestion(assumptions, risks) {
-  if (assumptions.length === 1 && risks.length === 1) {
-    return "Bu soru bir karar sorusu değil, duygusal netlik arayışı olabilir.";
-  }
-  return null;
-}
-
-function determineTone(pressure, contradiction, avoidance, wrongQuestion) {
-  if (wrongQuestion) return "yanlış-soru";
-  if (contradiction) return "çelişkili";
-  if (avoidance) return "kaçış";
-  if (pressure >= 10) return "yüksek";
-  if (pressure >= 6) return "orta";
+function determineTone(pressure) {
+  if (pressure >= 3) return "yüksek";
+  if (pressure === 2) return "orta";
   return "düşük";
 }
 
 function buildSummary(tone) {
-  if (tone === "yanlış-soru") {
-    return "Bu soru bir karar üretmekten çok bir duygu durumunu ifade ediyor olabilir.";
-  }
-  if (tone === "çelişkili") {
-    return "Bu düşünce kendi içinde çelişen varsayımlar içeriyor.";
-  }
-  if (tone === "kaçış") {
-    return "Bu soru karar almaktan kaçınma eğilimi gösteriyor olabilir.";
-  }
   if (tone === "yüksek") {
-    return "Bu düşünce yüksek baskı altında şekilleniyor.";
+    return "Bu karar yüksek baskı altında ve dikkatle ele alınmalı.";
   }
   if (tone === "orta") {
-    return "Bu karar bazı varsayımlar ve riskler içeriyor.";
-  }
-  return "Bu soru düşük baskı altında değerlendiriliyor.";
-}
-
-function buildReadable(tone) {
-  if (tone === "yanlış-soru") {
-    return "Burada karar vermekten önce ne hissettiğini ayırt etmek daha anlamlı olabilir.";
-  }
-  if (tone === "çelişkili") {
-    return "Zorunluluk hissi ile belirsizlik aynı anda var. Bu ikisi birlikte doğru olamaz.";
-  }
-  if (tone === "kaçış") {
-    return "Bu soru karar almaktan çok kararı erteleme ihtiyacını yansıtıyor olabilir.";
-  }
-  if (tone === "yüksek") {
-    return "Bu karar acele veya baskı altında şekilleniyor olabilir. Sorunun kendisini yeniden ele almak faydalı olabilir.";
-  }
-  if (tone === "orta") {
-    return "Karar, içerdiği varsayımlar ve riskler nedeniyle dikkatli ele alınmalı.";
+    return "Bu karar bazı varsayımlar ve riskler içeriyor. Netlik artırılabilir.";
   }
   return "Bu karar alanı şu an sakin ve geniş görünüyor.";
 }
 
+function buildReadable(summary) {
+  return summary;
+}
+
+// ----------------------------
+// ANA KARAR MOTORU
+// ----------------------------
+
+function handleInput({ text }) {
+  if (!text || text.trim().length < 3) {
+    return {
+      type: "silence",
+      readable: "Yeterli içerik bulunmadığı için değerlendirme yapılmadı."
+    };
+  }
+
+  const assumptions = extractAssumptions(text);
+  const risks = identifyRisks(text);
+  const alternatives = generateAlternatives(text);
+
+  const pressure = calculatePressure(assumptions, risks);
+  const tone = determineTone(pressure);
+
+  const summary = buildSummary(tone);
+
+  return {
+    type: "decision-frame",
+    pressure,
+    tone,
+    summary,
+    structured: {
+      assumptions,
+      risks,
+      alternatives
+    },
+    readable: buildReadable(summary)
+  };
+}
+
+// ----------------------------
+// EXPORT
+// ----------------------------
 
 module.exports = { handleInput };
